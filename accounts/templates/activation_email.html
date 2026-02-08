@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activate Your Account</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f9fc;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        h1 {
+            color: #2d3748;
+            font-size: 22px;
+            margin-bottom: 20px;
+        }
+        p {
+            line-height: 1.6;
+            font-size: 15px;
+            margin-bottom: 16px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #28a745;
+            color: #ffffff !important;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background-color: #1e7e34;
+        }
+        .footer {
+            font-size: 13px;
+            color: #666;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Our Platform 🎉</h1>
+
+        <p>Hi {{ user.username|default:user.email }},</p>
+
+        <p>Thank you for signing up! To start using your account, please verify your email address by clicking the button below:</p>
+
+        <p style="text-align: center;">
+            <a href="{{ confirmation_link }}" class="btn">Activate My Account</a>
+        </p>
+
+        <p>If you did not create an account, you can safely ignore this email.</p>
+
+        <p>We're excited to have you on board! 🚀</p>
+
+        <div class="footer">
+            <p>
+                You’re receiving this email because you recently registered on our platform.
+                <br>
+                This is an automated message. Please do not reply directly to this email.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
