@@ -42,6 +42,8 @@ class RegisterView(generics.CreateAPIView):
 
 
 class VerifyEmailView(APIView):
+    serializer_class = None
+    
     def get(self, request):
         token = request.GET.get('token')
         email = verify_email_token(token)
@@ -62,6 +64,7 @@ class VerifyEmailView(APIView):
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = None
 
     def post(self, request):
         try:

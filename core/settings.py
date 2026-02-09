@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 
 from datetime import timedelta
+import os
 from pathlib import Path
 
 import environ
@@ -50,6 +51,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    'cloudinary_storage',
+    'cloudinary',
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
@@ -144,7 +147,17 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+MEDIA_URL = '/sossokhet/'
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': env('CLOUD_NAME'),
+    'API_KEY': env('CLOUDINARY_API_KEY'),
+    'API_SECRET': env('CLOUDINARY_API_SECRET'),
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -164,9 +177,10 @@ EMAIL_HOST_PASSWORD = env("EMAIL_PASSWORD")
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Sossokhet API',
-    'DESCRIPTION': 'API documentation for Sossokhet',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
+    'DESCRIPTION': f"""API documentation for Sossokhet \n
+    Base URL: {env("BACKEND_URL", default="http://127.0.0.1:8000")}""",
 }
 
 

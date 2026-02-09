@@ -6,13 +6,37 @@ class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
     confirm_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
 
+    # common fields 
+    nid_number = serializers.CharField(max_length=20, required=True)
+    division = serializers.CharField(max_length=50, required=True)
+    district = serializers.CharField(max_length=50, required=True)
+    upazila = serializers.CharField(max_length=50, required=True)
+    village = serializers.CharField(max_length=100, required=True)
+    address_details = serializers.CharField(required=False, allow_blank=True)
+
     class Meta:
         model = User
-        fields = ['username', 'email', 'phone', 'user_type', 'password', 'confirm_password']
+        fields = ['first_name', 'last_name', 'email', 'phone', 'user_type', 
+                  'password', 'confirm_password', 'nid_number', 'division', 'district', 'upazila', 'village', 'address_details']
 
     def validate(self, data):
         if data['password'] != data['confirm_password']:
             raise serializers.ValidationError("Passwords do not match.")
+        
+        if User.objects.filter(phone=data['phone']).exists():
+            raise serializers.ValidationError("Phone number already in use.")
+        
+        if data['user_type'] == 'seller':
+            if not data.get('nid_number'):
+                raise serializers.ValidationError("NID number is required for sellers.")
+            if SellerProfile.objects.filter(nid_number=data['nid_number']).exists():
+                raise serializers.ValidationError("NID number already in use for a seller.")
+        elif data['user_type'] == 'buyer':
+            if not data.get('nid_number'):
+                raise serializers.ValidationError("NID number is required for buyers.")
+            if BuyerProfile.objects.filter(nid_number=data['nid_number']).exists():
+                raise serializers.ValidationError("NID number already in use for a buyer.")
+
         return data
 
     def create(self, validated_data):
@@ -20,6 +44,26 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         user.is_verified = False
         user.save()
+        if user.user_type == 'seller':
+            SellerProfile.objects.create(
+                user=user,
+                nid_number=validated_data['nid_number'],
+                division=validated_data['division'],
+                district=validated_data['district'],
+                upazila=validated_data['upazila'],
+                village=validated_data['village'],
+                address_details=validated_data.get('address_details', '')
+            )
+        elif user.user_type == 'buyer':
+            BuyerProfile.objects.create(
+                user=user,
+                nid_number=validated_data['nid_number'],
+                division=validated_data['division'],
+                district=validated_data['district'],
+                upazila=validated_data['upazila'],
+                village=validated_data['village'],
+                address_details=validated_data.get('address_details', '')
+            )
         return user
 
 
