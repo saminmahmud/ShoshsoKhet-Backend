@@ -11,10 +11,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from accounts.serializers import RegisterSerializer, ForgetOrChangePasswordSerializer, SetPasswordSerializer
 from accounts.tasks import send_email
-from accounts.utils import generate_email_token, verify_email_token
+from accounts.utils import generate_email_token, verify_email_token, cleanup_expired_tokens
 from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from rest_framework_simplejwt.views import TokenRefreshView
+
 
 User = get_user_model()
 
@@ -136,3 +138,10 @@ class SetPasswordView(APIView):
         user.set_password(new_password)
         user.save()
         return Response({"message": "Password reset successful."}, status=200)
+
+
+
+class CustomTokenRefreshView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        cleanup_expired_tokens()
+        return super().post(request, *args, **kwargs)
