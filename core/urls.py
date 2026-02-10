@@ -10,6 +10,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
     path('products/', include('product.urls')),
+    path('orders/', include('order.urls')),
 
     # Swagger UI
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
@@ -18,6 +19,6 @@ urlpatterns = [
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
-admin.site.site_header = "Sossokhet Admin"
-admin.site.site_title = "Sossokhet Admin Portal"
-admin.site.index_title = "Sossokhet Admin Portal"
+admin.site.site_header = "Shoshsokhet Admin"
+admin.site.site_title = "Shoshsokhet Admin Portal"
+admin.site.index_title = "Shoshsokhet Admin Portal"

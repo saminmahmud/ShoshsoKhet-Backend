@@ -1,7 +1,7 @@
 from cloudinary_storage.storage import MediaCloudinaryStorage
 from django.db import models
 from django_resized import ResizedImageField
-
+from django.core.exceptions import ValidationError
 from accounts.models import SellerProfile
 
 UNIT_CHOICES = (
@@ -45,6 +45,17 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.name} - {self.seller.user.username}"
 
+    def reduce_stock(self, quantity):
+        if self.available_quantity < quantity:
+            raise ValidationError("Insufficient stock available")
+
+        self.available_quantity -= quantity
+        self.save(update_fields=['available_quantity'])
+
+    def increase_stock(self, quantity):
+        self.available_quantity += quantity
+        self.save(update_fields=['available_quantity'])
+        
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')

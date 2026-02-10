@@ -5,7 +5,7 @@ from .serializers import (
     ProductSerializer,
 )
 from rest_framework.parsers import MultiPartParser, FormParser
-from .permissions import IsSeller, IsBuyer, IsAdmin, IsSellerOrAdmin, IsSellerOwner
+from .permissions import IsBuyerOrAdmin, IsSeller, IsBuyer, IsAdmin, IsSellerOrAdmin, IsSellerOwner
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -41,7 +41,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         # Read-only for buyers
         if self.action in ['list', 'retrieve']:
-            return [permissions.IsAuthenticated()]
+            return [permissions.IsAuthenticated(), IsBuyerOrAdmin()]
 
         # Create / Update / Delete → Seller or Admin
         return [permissions.IsAuthenticated(), IsSellerOrAdmin()]

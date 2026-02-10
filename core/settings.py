@@ -61,6 +61,7 @@ INSTALLED_APPS = [
 
     'accounts',
     'product',
+    'order',
 
 ]
 
@@ -176,10 +177,10 @@ EMAIL_HOST_PASSWORD = env("EMAIL_PASSWORD")
 
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'Sossokhet API',
+    'TITLE': 'Shoshsokhet API',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    'DESCRIPTION': f"""API documentation for Sossokhet \n
+    'DESCRIPTION': f"""API documentation for Shoshsokhet \n
     Base URL: {env("BACKEND_URL", default="http://127.0.0.1:8000")}""",
 }
 
