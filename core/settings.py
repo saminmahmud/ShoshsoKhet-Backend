@@ -60,7 +60,7 @@ INSTALLED_APPS = [
     'whitenoise',
 
     'accounts',
-    # 'accounts.apps.AccountsConfig',
+    'product',
 
 ]
 

@@ -9,6 +9,7 @@ from . import settings
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
+    path('products/', include('product.urls')),
 
     # Swagger UI
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

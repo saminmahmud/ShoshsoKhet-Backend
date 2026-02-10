@@ -86,3 +86,26 @@ class SetPasswordSerializer(serializers.Serializer):
         if attrs['new_password'] != attrs['confirm_password']:
             raise serializers.ValidationError({"password": "Passwords do not match."})
         return attrs
+    
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'user_type', 'is_verified']
+        read_only_fields = ['id', 'is_verified']
+
+
+class SellerProfileSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = SellerProfile
+        fields = ['user', 'nid_number', 'division', 'district', 'upazila', 'village', 'address_details']
+
+
+class BuyerProfileSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = BuyerProfile
+        fields = ['user', 'nid_number', 'division', 'district', 'upazila', 'village', 'address_details']

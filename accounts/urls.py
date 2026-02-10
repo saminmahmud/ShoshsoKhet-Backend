@@ -1,8 +1,22 @@
-from django.urls import path
+from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from . import views
+from rest_framework.routers import DefaultRouter
+from accounts.views import (
+    UserDetailView,
+    SellerProfileView,
+    BuyerProfileView
+)
+
+router = DefaultRouter()
+router.register('users', UserDetailView, basename='users')
+router.register('seller-profiles', SellerProfileView, basename='seller-profiles')
+router.register('buyer-profiles', BuyerProfileView, basename='buyer-profiles')
+
 
 urlpatterns = [
+    path('', include(router.urls)),
+    
     path('register/', views.RegisterView.as_view(), name='register'),
     path('verify-email/', views.VerifyEmailView.as_view(), name='verify_email'),
     

@@ -1,15 +1,18 @@
 from concurrent.futures import thread
 import threading
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.template.loader import render_to_string
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
-from accounts.serializers import RegisterSerializer, ForgetOrChangePasswordSerializer, SetPasswordSerializer
+from accounts.models import BuyerProfile, SellerProfile
+from accounts.serializers import RegisterSerializer, ForgetOrChangePasswordSerializer, SetPasswordSerializer, UserSerializer, SellerProfileSerializer, BuyerProfileSerializer
 from accounts.tasks import send_email
 from accounts.utils import generate_email_token, verify_email_token, cleanup_expired_tokens
 from django.contrib.auth import get_user_model
@@ -148,3 +151,62 @@ class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         cleanup_expired_tokens()
         return super().post(request, *args, **kwargs)
+
+
+class UserDetailView(ModelViewSet):
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return User.objects.filter(id=self.request.user.id)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+    
+class SellerProfileView(ModelViewSet):
+    serializer_class = SellerProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.user_type == 'admin':
+            return SellerProfile.objects.select_related('user').all()
+
+        if user.user_type == 'seller':
+            return SellerProfile.objects.filter(user=user)
+        return SellerProfile.objects.none()
+
+    def perform_create(self, serializer):
+        if self.request.user.user_type != 'seller':
+            raise PermissionDenied("Only sellers can create profile.")
+        serializer.save(user=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(user=self.request.user)
+    
+
+class BuyerProfileView(ModelViewSet):
+    serializer_class = BuyerProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        if user.user_type == 'admin':
+            return BuyerProfile.objects.select_related('user').all()
+
+        if user.user_type == 'buyer':
+            return BuyerProfile.objects.filter(user=user)
+
+        return BuyerProfile.objects.none()
+
+    def perform_create(self, serializer):
+        if self.request.user.user_type != 'buyer':
+            raise PermissionDenied("Only buyers can create profile.")
+        serializer.save(user=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(user=self.request.user)
