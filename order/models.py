@@ -1,3 +1,4 @@
+from decimal import Decimal
 import uuid
 from django.db import models
 from PlatformCommission.models import PlatformCommission, PlatformRevenue
@@ -27,7 +28,7 @@ class Order(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     note = models.TextField(null=True, blank=True)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     platform_commission = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     is_paid = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -36,15 +37,23 @@ class Order(models.Model):
     
     def __str__(self):
         return f"{self.order_id} - {self.buyer.user.username}"
-    
+
     def calculate_total(self):
-        items = self.items.all()
-        self.subtotal = sum(item.total_price for item in items)
-        self.platform_commission = sum(item.commission_amount for item in items)
-        self.total_amount = self.subtotal
+        if self.pk:
+            items = self.items.all()
+            new_subtotal = sum(item.total_price for item in items)
+            new_commission = sum(item.commission_amount for item in items)
+
+            Order.objects.filter(pk=self.pk).update(
+                subtotal=new_subtotal,
+                platform_commission=new_commission,
+                total_amount=new_subtotal
+            )
+            self.subtotal = new_subtotal
+            self.platform_commission = new_commission
+            self.total_amount = new_subtotal
 
     def save(self, *args, **kwargs):
-        self.calculate_total()
         super().save(*args, **kwargs)
 
     def create_platform_revenue(self):
@@ -93,12 +102,16 @@ class OrderItem(models.Model):
     seller_payout = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
     def save(self, *args, **kwargs):
-        self.total_price = self.quantity * self.price_per_unit
-        self.commission_rate = PlatformCommission.get_platform_commission()
+        self.total_price = Decimal(str(self.quantity)) * Decimal(str(self.price_per_unit))
+        rate = PlatformCommission.get_platform_commission()
+        self.commission_rate = Decimal(str(rate))
         self.commission_amount = self.calculate_commission()
         self.seller_payout = self.total_price - self.commission_amount
         super().save(*args, **kwargs)
-    
+
+        if self.order:
+            self.order.calculate_total()
+
     def calculate_commission(self):
         return (self.total_price * self.commission_rate / 100)
     
