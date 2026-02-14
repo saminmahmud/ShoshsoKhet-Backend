@@ -8,7 +8,7 @@ class OrderItemInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('order_id', 'transaction_id', 'buyer', 'status',  'subtotal', 'total_amount', 'created_at')
+    list_display = ('order_id', 'transaction_id', 'buyer', 'status', 'total_amount', 'created_at')
     list_filter = ('status', 'created_at')
     search_fields = ('order_id', 'buyer__user__username', 'buyer__user__email')
     readonly_fields = (

@@ -1,7 +1,5 @@
-from datetime import timezone
 import uuid
 from django.db import models
-
 from PlatformCommission.models import PlatformCommission, PlatformRevenue
 from accounts.models import BuyerProfile, SellerProfile
 from product.models import Product
@@ -24,11 +22,14 @@ class Order(models.Model):
     email = models.EmailField()
     phone = models.CharField(max_length=20, null=True, blank=True)
     address = models.TextField()
+    postal_code = models.CharField(max_length=20)
+    city = models.CharField(max_length=100)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     note = models.TextField(null=True, blank=True)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     platform_commission = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    is_paid = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -76,6 +77,7 @@ class Order(models.Model):
             models.Index(fields=['status']),
             models.Index(fields=['buyer']),
         ]
+        ordering = ['-created_at']
     
 
 

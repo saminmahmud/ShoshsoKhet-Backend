@@ -11,8 +11,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 
-from datetime import timedelta
 import os
+from datetime import timedelta
 from pathlib import Path
 
 import environ
@@ -202,6 +202,8 @@ SIMPLE_JWT = {
     'UPDATE_LAST_LOGIN': True,
 }
 
+STORE_ID=env("STORE_ID")
+STORE_PASSWORD=env("STORE_PASSWORD")
 
 BACKEND_URL = env("BACKEND_URL", default="http://127.0.0.1:8000")
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
