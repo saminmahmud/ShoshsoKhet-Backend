@@ -1,3 +1,4 @@
+import platform
 from rest_framework import serializers
 from accounts.serializers import SellerProfileSerializer
 from .models import Category, Product, ProductImage
@@ -27,7 +28,7 @@ class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True) 
     seller = SellerProfileSerializer(read_only=True)
     category_detail = CategoryReadSerializer(source='category', read_only=True)
-    
+
     # write only 
     category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.filter(is_active=True), write_only=True)
     uploaded_images  = serializers.ListField(

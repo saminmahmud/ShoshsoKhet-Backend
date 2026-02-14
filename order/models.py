@@ -2,6 +2,7 @@ from datetime import timezone
 import uuid
 from django.db import models
 
+from PlatformCommission.models import PlatformCommission, PlatformRevenue
 from accounts.models import BuyerProfile, SellerProfile
 from product.models import Product
 
@@ -16,6 +17,7 @@ class Order(models.Model):
     )
     
     order_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    transaction_id = models.CharField(max_length=100, null=True, blank=True)
     buyer = models.ForeignKey(BuyerProfile, on_delete=models.CASCADE, related_name='orders')
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -24,9 +26,9 @@ class Order(models.Model):
     address = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     note = models.TextField(null=True, blank=True)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     platform_commission = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-    delivery_fee = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -35,11 +37,46 @@ class Order(models.Model):
         return f"{self.order_id} - {self.buyer.user.username}"
     
     def calculate_total(self):
-        total = sum(item.total_price for item in self.items.all())
-        self.total_amount = total + self.delivery_fee
-        self.save(update_fields=["total_amount"])
+        items = self.items.all()
+        self.subtotal = sum(item.total_price for item in items)
+        self.platform_commission = sum(item.commission_amount for item in items)
+        self.total_amount = self.subtotal
 
+    def save(self, *args, **kwargs):
+        self.calculate_total()
+        super().save(*args, **kwargs)
 
+    def create_platform_revenue(self):
+        PlatformRevenue.objects.create(
+            revenue_type='commission',
+            order=self,
+            seller=None,
+            buyer=self.buyer,
+            amount=self.platform_commission,
+            description=f"Commission from Order {self.order_id}",
+            transaction_id=self.transaction_id
+        )
+
+    def reverse_platform_revenue(self):
+        PlatformRevenue.objects.create(
+            revenue_type='commission',
+            order=self,
+            seller=None,
+            buyer=self.buyer,
+            amount=-self.platform_commission,
+            description=f"Reversal for Cancelled Order {self.order_id}",
+            transaction_id=self.transaction_id
+        )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['order_id']),
+            models.Index(fields=['transaction_id']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['status']),
+            models.Index(fields=['buyer']),
+        ]
+    
 
 
 class OrderItem(models.Model):
@@ -48,11 +85,20 @@ class OrderItem(models.Model):
     quantity = models.DecimalField(max_digits=6, decimal_places=2)
     price_per_unit = models.DecimalField(max_digits=8, decimal_places=2)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    commission_rate = models.DecimalField(max_digits=5, decimal_places=2)
+    commission_amount = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    seller_payout = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
     def save(self, *args, **kwargs):
         self.total_price = self.quantity * self.price_per_unit
+        self.commission_rate = PlatformCommission.get_platform_commission()
+        self.commission_amount = self.calculate_commission()
+        self.seller_payout = self.total_price - self.commission_amount
         super().save(*args, **kwargs)
-        self.order.calculate_total()
+    
+    def calculate_commission(self):
+        return (self.total_price * self.commission_rate / 100)
     
     def __str__(self):
         return f"{self.product.name} x {self.quantity} - Order {self.order.order_id}"

@@ -33,3 +33,18 @@ def handle_stock_on_status_change(sender, instance, created, **kwargs):
                 item.product.increase_stock(item.quantity)
 
 
+@receiver(post_save, sender=Order)
+def handle_platform_revenue_on_status_change(sender, instance, created, **kwargs):
+    if created:
+        return
+
+    previous  = getattr(instance, '_previous_status', None)
+    current  = instance.status
+
+    # Order Delivered → Create Revenue 
+    if previous != 'delivered' and current == 'delivered':
+        instance.create_platform_revenue()
+
+    # Order Cancelled after Delivered → Reverse Revenue 
+    if previous == 'delivered' and current == 'cancelled':
+        instance.reverse_platform_revenue()

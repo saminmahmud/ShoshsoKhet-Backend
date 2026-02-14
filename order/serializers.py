@@ -17,9 +17,12 @@ class OrderItemSerializer(serializers.ModelSerializer):
             'seller_fullname',
             'quantity',
             'price_per_unit',
-            'total_price'
+            'total_price',
+            'commission_rate',
+            'commission_amount',
+            'seller_payout'   
         ]
-        read_only_fields = ['total_price']
+        read_only_fields = ['total_price', 'commission_rate', 'commission_amount', 'seller_payout']
 
     def get_seller_fullname(self, obj):
         return f"{obj.product.seller.user.first_name} {obj.product.seller.user.last_name}"
@@ -35,6 +38,7 @@ class OrderSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'order_id',
+            'transaction_id',
             'buyer',
             'buyer_fullname',
             'first_name',
@@ -44,14 +48,14 @@ class OrderSerializer(serializers.ModelSerializer):
             'address',
             'status',
             'note',
+            'subtotal',
             'total_amount',
             'platform_commission',
-            'delivery_fee',
             'created_at',
             'updated_at',
             'items'
         ]
-        read_only_fields = ['order_id', 'total_amount', 'platform_commission', 'created_at', 'updated_at', 'status']
+        read_only_fields = ['order_id','subtotal', 'total_amount', 'platform_commission', 'created_at', 'updated_at', 'status', 'transaction_id']
 
 
     def create(self, validated_data):

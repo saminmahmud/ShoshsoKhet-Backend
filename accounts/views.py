@@ -83,6 +83,7 @@ class LogoutView(APIView):
 @method_decorator(csrf_exempt, name='dispatch')
 class PasswordForgetOrChangeRequest(APIView):
     permission_classes = []
+    authentication_classes = []
     serializer_class = ForgetOrChangePasswordSerializer
 
     def post(self, request):
@@ -118,6 +119,7 @@ class PasswordForgetOrChangeRequest(APIView):
 @method_decorator(csrf_exempt, name='dispatch')
 class SetPasswordView(APIView):
     permission_classes = []
+    authentication_classes = []
     serializer_class = SetPasswordSerializer
 
     def post(self, request):

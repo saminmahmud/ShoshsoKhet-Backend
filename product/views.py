@@ -1,4 +1,10 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions
+from rest_framework.filters import OrderingFilter, SearchFilter
+
+from product.filters import ProductFilter
+
+from product.filters import ProductFilter
 from .models import Category, Product, ProductImage
 from .serializers import (
     CategorySerializer,
@@ -23,6 +29,10 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     parser_classes = [MultiPartParser, FormParser]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = ProductFilter
+    search_fields = ['name', 'category__name']
+    ordering_fields = ['price_per_unit', 'created_at']
 
     def get_queryset(self):
         user = self.request.user

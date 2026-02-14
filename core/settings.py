@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'cloudinary_storage',
     'cloudinary',
     'rest_framework',
+    'django_filters',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'drf_spectacular',
@@ -62,6 +63,7 @@ INSTALLED_APPS = [
     'accounts',
     'product',
     'order',
+    'PlatformCommission',
 
 ]
 
@@ -165,6 +167,12 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 16, 
 }
 
 

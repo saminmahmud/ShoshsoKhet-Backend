@@ -55,7 +55,14 @@ class Product(models.Model):
     def increase_stock(self, quantity):
         self.available_quantity += quantity
         self.save(update_fields=['available_quantity'])
-        
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['name']),
+            models.Index(fields=['category']),
+            models.Index(fields=['price_per_unit']),
+            models.Index(fields=['seller']),
+        ]
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
