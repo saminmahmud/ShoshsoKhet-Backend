@@ -1,5 +1,7 @@
 from django.urls import path
 from .views import (
+    ManualRefund,
+    ManualReleasePayment,
     OrderCreateView,
     BuyerOrderListView,
     OrderDetailView,
@@ -9,6 +11,8 @@ from .views import (
     Paymentview,
     Purchase,
     Cancle_or_Fail,
+    EscrowTransactionListView,
+    SellerWalletView,
 )
 
 urlpatterns = [
@@ -28,6 +32,16 @@ urlpatterns = [
     path('payment/<uuid:order_id>/', Paymentview, name='payment-create'),
     path('payment/purchase/<uuid:order_id>/<tran_id>/', Purchase, name='purchase'),
     path('payment/cancle-or-fail/<uuid:order_id>/', Cancle_or_Fail, name='cancle-or-fail'),
+
+
+    # Manual escrow operations
+    path('<uuid:order_id>/release-payment/', ManualReleasePayment, name='manual-release-payment'),
+    path('<uuid:order_id>/refund/', ManualRefund, name='manual-refund'),
+
+    # Escrow transactions
+    path('escrow-transactions/', EscrowTransactionListView.as_view(), name='escrow-transaction-list'),
+    path('seller-wallet/', SellerWalletView.as_view(), name='seller-wallet-detail'),
+
 ]
 
 

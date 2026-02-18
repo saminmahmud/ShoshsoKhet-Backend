@@ -1,10 +1,11 @@
+from calendar import c
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponseRedirect
 from rest_framework.permissions import IsAuthenticated
 from sslcommerz_lib import SSLCOMMERZ
 from order.utils import generate_transaction_id
 from .models import Order, OrderItem
-from .serializers import OrderItemSerializer, OrderSerializer, OrderStatusSerializer, OrderStatusSerializer
+from .serializers import OrderItemSerializer, OrderSerializer, OrderStatusSerializer, OrderStatusSerializer, EscrowTransactionSerializer, SellerWalletSerializer
 from product.permissions import IsSellerOrAdmin, IsBuyerOrAdmin, IsAdmin, IsSeller, IsBuyer
 from rest_framework import generics, viewsets, status
 from django.core.exceptions import ValidationError
@@ -72,6 +73,13 @@ class OrderDeleteView(generics.DestroyAPIView):
     permission_classes = [IsAuthenticated, IsAdmin]
     lookup_field = 'order_id'
 
+    def perform_destroy(self, instance):
+        # If payment was held in escrow, refund it
+        if instance.escrow_status == 'held':
+            instance.refund_to_buyer(reason="Order deleted by admin")
+        
+        instance.delete()
+
 
 class SellerOrderItemListView(generics.ListAPIView):
     serializer_class = OrderItemSerializer
@@ -123,8 +131,8 @@ def Paymentview(request, order_id):
                 'cus_country': "Bangladesh",
                 'shipping_method': "NO",
                 'num_of_item': order_qs.items.count(),
-                'product_name': "Test",
-                'product_category': "Test Category",
+                'product_name': "Shoshsokhet Products",
+                'product_category': "Agricultural Products",
                 'product_profile': "general"
             }
 
@@ -143,7 +151,7 @@ def Paymentview(request, order_id):
 
 # View to handle the success response from the payment gateway
 @csrf_exempt
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 def Purchase(request, order_id, tran_id):
     order_qs = Order.objects.get(id=order_id, is_paid=False)
@@ -151,6 +159,7 @@ def Purchase(request, order_id, tran_id):
     if order_qs:
         order_qs.is_paid = True
         order_qs.tran_id = tran_id
+        order_qs.status = 'confirmed'
         order_qs.save()
         return HttpResponseRedirect(f'{FRONTEND_URL}/my-orders?payment_status=success')
 
@@ -159,7 +168,7 @@ def Purchase(request, order_id, tran_id):
 
 # View to handle the failure or cancellation of the payment
 @csrf_exempt
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 def Cancle_or_Fail(request, order_id):
     order_qs = Order.objects.get(id=order_id, is_paid=False)
@@ -169,3 +178,89 @@ def Cancle_or_Fail(request, order_id):
         return HttpResponseRedirect(f'{FRONTEND_URL}/cart?payment_status=failed')
 
     return HttpResponseRedirect(f'{FRONTEND_URL}/cart?payment_status=failed')
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsAdmin])
+def ManualReleasePayment(request, order_id):
+    """
+    Admin can manually release payment to sellers
+    (In case auto-release after delivery doesn't work)
+    """
+    try:
+        order = Order.objects.get(order_id=order_id)
+        
+        if order.escrow_status != 'held':
+            return Response({
+                'error': 'Payment is not held in escrow'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        success = order.release_payment_to_sellers()
+        
+        if success:
+            return Response({
+                'message': 'Payment released to sellers successfully'
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'error': 'Failed to release payment'
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    except Order.DoesNotExist:
+        return Response({
+            'error': 'Order not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated, IsAdmin])
+def ManualRefund(request, order_id):
+    """
+    Admin can manually refund payment to buyer
+    """
+    try:
+        order = Order.objects.get(order_id=order_id)
+        reason = request.data.get('reason', 'Manual refund by admin')
+        
+        if order.escrow_status != 'held':
+            return Response({
+                'error': 'Payment is not held in escrow'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        success = order.refund_to_buyer(reason=reason)
+        
+        if success:
+            # Also mark order as cancelled
+            order.status = 'cancelled'
+            order.save()
+            
+            return Response({
+                'message': 'Payment refunded to buyer successfully'
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'error': 'Failed to refund payment'
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    except Order.DoesNotExist:
+        return Response({
+            'error': 'Order not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+
+class EscrowTransactionListView(generics.ListAPIView):
+    serializer_class = EscrowTransactionSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get_queryset(self):
+        return Order.objects.filter(escrow_status='held').order_by('-escrow_held_at')
+    
+    
+class SellerWalletView(generics.RetrieveAPIView):
+    serializer_class = SellerWalletSerializer
+    permission_classes = [IsAuthenticated, IsSeller]
+
+    def get_object(self):
+        return self.request.user.seller_profile.wallet
+    
