@@ -7,8 +7,6 @@ from accounts.models import BuyerProfile, SellerProfile
 from product.models import Product
 
 class EscrowAccount(models.Model):
-    """Platform's escrow wallet - holds buyer payments"""
-    
     account_number = models.CharField(max_length=20, unique=True, editable=False)
     total_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     total_held = models.DecimalField(max_digits=12, decimal_places=2, default=0)
@@ -31,7 +29,6 @@ class EscrowAccount(models.Model):
     
     @classmethod
     def get_main_account(cls):
-        """Get or create main escrow account"""
         account, created = cls.objects.get_or_create(id=1)
         return account
 

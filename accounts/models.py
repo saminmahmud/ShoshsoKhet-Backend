@@ -8,10 +8,6 @@ from accounts.managers import CustomUserManager
 from django.utils.translation import gettext_lazy as _
 
 
-# ============================================
-# 1. CUSTOM USER MODEL (3 types: Admin, Seller, Buyer)
-# ============================================
-
 class User(AbstractUser):
     USER_TYPE_CHOICES = (
         ('admin', 'Admin'),
@@ -36,10 +32,6 @@ class User(AbstractUser):
         return f"{self.username} ({self.user_type})"
 
 
-# ============================================
-# 2. SELLER/FARMER PROFILE
-# ============================================
-
 class SellerProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='seller_profile')
     nid_number = models.CharField(max_length=20, unique=True)
@@ -52,10 +44,6 @@ class SellerProfile(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.user.user_type}"
 
-
-# ============================================
-# 3. BUYER/CUSTOMER PROFILE
-# ============================================
 
 class BuyerProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='buyer_profile')
