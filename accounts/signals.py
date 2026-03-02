@@ -1,9 +1,11 @@
-from django.db.models.signals import post_delete, pre_save
+from django.db.models.signals import post_delete, post_save, pre_save
 from django.dispatch import receiver
 from django.utils.text import slugify
 from django.contrib.auth import get_user_model
 
+from accounts.models import SellerProfile
 from accounts.utils import delete_all_images_on_delete, delete_old_image_if_changed
+from order.models import SellerWallet
 
 User = get_user_model()
 
@@ -21,9 +23,13 @@ def set_username_from_email(sender, instance, **kwargs):
 
         instance.username = username
 
+@receiver(post_save, sender=SellerProfile)
+def create_seller_wallet(sender, instance, created, **kwargs):
+    if created:
+        SellerWallet.objects.create(seller=instance)
+
 
 # Cloudinary Image Handling
-
 @receiver(pre_save, sender=User)
 # Delete old profile image if changed
 def auto_delete_old_image_on_change(sender, instance, **kwargs):
