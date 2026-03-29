@@ -1,12 +1,13 @@
-
 from django.contrib import admin
 from django.urls import path, include
+from core.views import WelcomeView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.conf.urls.static import static
 from . import settings
 
 
 urlpatterns = [
+    path('', WelcomeView.as_view(), name='welcome'),
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
     path('products/', include('product.urls')),
