@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import User, SellerProfile, BuyerProfile
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -66,6 +67,13 @@ class RegisterSerializer(serializers.ModelSerializer):
             )
         return user
 
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['user_type'] = user.user_type 
+        return token
 
 
 class ForgetOrChangePasswordSerializer(serializers.Serializer):

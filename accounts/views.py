@@ -12,13 +12,15 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from accounts.models import BuyerProfile, SellerProfile
-from accounts.serializers import RegisterSerializer, ForgetOrChangePasswordSerializer, SetPasswordSerializer, UserSerializer, SellerProfileSerializer, BuyerProfileSerializer
+from accounts.serializers import RegisterSerializer, ForgetOrChangePasswordSerializer, SetPasswordSerializer, UserSerializer, SellerProfileSerializer, BuyerProfileSerializer, CustomTokenObtainPairSerializer
 from accounts.tasks import send_email
 from accounts.utils import generate_email_token, verify_email_token, cleanup_expired_tokens
 from django.contrib.auth import get_user_model
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
 User = get_user_model()
@@ -63,6 +65,27 @@ class VerifyEmailView(APIView):
             return HttpResponseRedirect(settings.FRONTEND_URL + "/login?status=failed")
 
 
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        access  = str(serializer.validated_data['access'])
+        refresh = str(serializer.validated_data['refresh'])
+
+        response = Response({'access': access}, status=200)
+
+        response.set_cookie(
+            key='refresh',
+            value=refresh,
+            httponly=True,
+            secure=settings.SIMPLE_JWT.get('AUTH_COOKIE_SECURE', True),
+            samesite=settings.SIMPLE_JWT.get('AUTH_COOKIE_SAMESITE', 'None'),
+            max_age=60 * 60 * 24 * 30, 
+        )
+        return response
 
 
 class LogoutView(APIView):
@@ -70,13 +93,18 @@ class LogoutView(APIView):
     serializer_class = None
 
     def post(self, request):
+        refresh_token = request.COOKIES.get('refresh')
+        if not refresh_token:
+            return Response({"error": "Refresh token not found"}, status=400)
         try:
-            refresh_token = request.data["refresh"]
             token = RefreshToken(refresh_token)
             token.blacklist()
-            return Response({"message": "Logout successful"})
-        except Exception as e:
+        except Exception:
             return Response({"error": "Invalid token"}, status=400)
+
+        response = Response({"message": "Logout successful"})
+        response.delete_cookie('refresh', samesite='None')
+        return response
 
 
 
@@ -148,11 +176,29 @@ class SetPasswordView(APIView):
         return Response({"message": "Password reset successful."}, status=200)
 
 
-
 class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         cleanup_expired_tokens()
-        return super().post(request, *args, **kwargs)
+
+        refresh_token = request.COOKIES.get('refresh')
+        if refresh_token:
+            data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+            data['refresh'] = refresh_token
+            request._full_data = data
+
+        response = super().post(request, *args, **kwargs)
+
+        if response.status_code == 200 and 'refresh' in response.data:
+            new_refresh = response.data.pop('refresh')
+            response.set_cookie(
+                key='refresh',
+                value=new_refresh,
+                httponly=True,
+                secure=settings.SIMPLE_JWT.get('AUTH_COOKIE_SECURE', True),
+                samesite=settings.SIMPLE_JWT.get('AUTH_COOKIE_SAMESITE', 'None'),
+                max_age=60 * 60 * 24 * 30,
+            )
+        return response
 
 
 class UserDetailView(ModelViewSet):
@@ -167,6 +213,7 @@ class UserDetailView(ModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
     
+
 class SellerProfileView(ModelViewSet):
     serializer_class = SellerProfileSerializer
     permission_classes = [IsAuthenticated]
