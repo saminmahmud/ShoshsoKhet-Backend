@@ -80,4 +80,20 @@ class ProductViewSet(viewsets.ModelViewSet):
         return obj
 
 
+class GetSellerProductsViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = ProductSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = ProductFilter
+    search_fields = ['name', 'category__name']
+    ordering_fields = ['price_per_unit', 'created_at']
+
+    def get_queryset(self):
+        user = self.request.user
+
+        # Only sellers can access this endpoint
+        if user.user_type != 'seller':
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Only sellers can access this endpoint.")
+
+        return Product.objects.filter(seller=user.seller_profile)
 
