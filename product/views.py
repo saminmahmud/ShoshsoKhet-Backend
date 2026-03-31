@@ -51,20 +51,24 @@ class ProductViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         # Read-only for buyers
         if self.action in ['list', 'retrieve']:
-            return [permissions.IsAuthenticated(), IsBuyerOrAdmin()]
+            return [permissions.IsAuthenticated()]
 
         # Create / Update / Delete → Seller or Admin
         return [permissions.IsAuthenticated(), IsSellerOrAdmin()]
 
     def perform_create(self, serializer):
-        serializer.save(
-            seller=self.request.user.seller_profile
-        )
+        user = self.request.user
+
+        if user.user_type == 'seller':
+            serializer.save(seller=user.seller_profile)
+        else:
+            serializer.save()  # admin case
 
     def perform_update(self, serializer):
-        # extra safety
-        if self.request.user.user_type == 'seller':
-            serializer.save(seller=self.request.user.seller_profile)
+        user = self.request.user
+
+        if user.user_type == 'seller':
+            serializer.save(seller=user.seller_profile)
         else:
             serializer.save()
 
@@ -78,22 +82,3 @@ class ProductViewSet(viewsets.ModelViewSet):
                 raise PermissionDenied("Not your product.")
 
         return obj
-
-
-class GetSellerProductsViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = ProductSerializer
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_class = ProductFilter
-    search_fields = ['name', 'category__name']
-    ordering_fields = ['price_per_unit', 'created_at']
-
-    def get_queryset(self):
-        user = self.request.user
-
-        # Only sellers can access this endpoint
-        if user.user_type != 'seller':
-            from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied("Only sellers can access this endpoint.")
-
-        return Product.objects.filter(seller=user.seller_profile)
-
