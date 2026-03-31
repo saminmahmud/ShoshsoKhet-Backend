@@ -107,7 +107,6 @@ class LogoutView(APIView):
         return response
 
 
-
 @method_decorator(csrf_exempt, name='dispatch')
 class PasswordForgetOrChangeRequest(APIView):
     permission_classes = []
