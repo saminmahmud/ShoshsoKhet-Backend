@@ -63,6 +63,7 @@ class Product(models.Model):
             models.Index(fields=['price_per_unit']),
             models.Index(fields=['seller']),
         ]
+        ordering = ['-created_at']
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')

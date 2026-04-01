@@ -42,11 +42,12 @@ class ProductViewSet(viewsets.ModelViewSet):
             return Product.objects.all()
 
         # Seller sees own products
-        if user.user_type == 'seller':
+        elif user.user_type == 'seller':
             return Product.objects.filter(seller=user.seller_profile)
 
         # Buyer sees active products only
-        return Product.objects.filter(is_active=True)
+        else:
+            return Product.objects.filter(is_active=True)
 
     def get_permissions(self):
         # Read-only for buyers
@@ -74,11 +75,16 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def get_object(self):
         obj = super().get_object()
+        user = self.request.user
 
-        # Seller cannot access others product
-        if self.request.user.user_type == 'seller':
-            if obj.seller.user != self.request.user:
+        if user.user_type == 'seller':
+            if obj.seller.user != user:
                 from rest_framework.exceptions import PermissionDenied
                 raise PermissionDenied("Not your product.")
+
+        elif user.user_type == 'buyer':
+            if not obj.is_active:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied("Product is inactive.")
 
         return obj
