@@ -161,24 +161,49 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_deleted = models.BooleanField(default=False)
+    delivered_at = models.DateTimeField(null=True, blank=True)
     
     def __str__(self):
         return f"{self.order_id} - {self.buyer.user.username}"
 
+    # def calculate_total(self):
+    #     if self.pk:
+    #         items = self.items.all()
+    #         new_subtotal = sum(item.total_price for item in items)
+    #         new_commission = sum(item.commission_amount for item in items)
+
+    #         Order.objects.filter(pk=self.pk).update(
+    #             subtotal=new_subtotal,
+    #             platform_commission=new_commission,
+    #             total_amount=new_subtotal
+    #         )
+    #         self.subtotal = new_subtotal
+    #         self.platform_commission = new_commission
+    #         self.total_amount = new_subtotal
     def calculate_total(self):
         if self.pk:
             items = self.items.all()
-            new_subtotal = sum(item.total_price for item in items)
-            new_commission = sum(item.commission_amount for item in items)
+
+            subtotal = sum(item.total_price for item in items)
+
+            seller_commission = sum(item.commission_amount for item in items)
+            buyer_commission = sum(item.buyer_commission for item in items)
+
+            # buyer pays 
+            total_amount = subtotal + buyer_commission
+
+            # platform earns both buyer and seller commission
+            total_commission = seller_commission + buyer_commission
 
             Order.objects.filter(pk=self.pk).update(
-                subtotal=new_subtotal,
-                platform_commission=new_commission,
-                total_amount=new_subtotal
+                subtotal=subtotal,
+                platform_commission=total_commission,
+                total_amount=total_amount
             )
-            self.subtotal = new_subtotal
-            self.platform_commission = new_commission
-            self.total_amount = new_subtotal
+
+            self.subtotal = subtotal
+            self.platform_commission = total_commission
+            self.total_amount = total_amount
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -355,13 +380,15 @@ class OrderItem(models.Model):
 
     commission_rate = models.DecimalField(max_digits=5, decimal_places=2)
     commission_amount = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    buyer_commission = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     seller_payout = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
     def save(self, *args, **kwargs):
         self.total_price = Decimal(self.quantity) * Decimal(self.price_per_unit)
         rate = PlatformCommission.get_platform_commission()
         self.commission_rate = Decimal(rate)
-        self.commission_amount = self.calculate_commission()
+        self.commission_amount = (self.total_price * rate) / 100
+        self.buyer_commission = (self.total_price * rate) / 100
         self.seller_payout = self.total_price - self.commission_amount
         super().save(*args, **kwargs)
 

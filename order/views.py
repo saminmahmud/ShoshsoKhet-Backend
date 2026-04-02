@@ -1,4 +1,3 @@
-from calendar import c
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponseRedirect
 from rest_framework.permissions import IsAuthenticated
@@ -181,13 +180,13 @@ def Purchase(request, order_id, tran_id):
     
     if order_qs:
         order_qs.is_paid = True
-        order_qs.tran_id = tran_id
+        order_qs.transaction_id = tran_id
         order_qs.status = 'confirmed'
         order_qs.save()
-        # return HttpResponseRedirect(f'{FRONTEND_URL}?payment_status=success')
+        # return HttpResponseRedirect(f'{FRONTEND_URL}/payment?status=success&order_id={order_id}')
         return HttpResponseRedirect(f'http://localhost:3000/payment?status=success&order_id={order_id}')
 
-    # return HttpResponseRedirect(f'{FRONTEND_URL}?payment_status=failed')
+    # return HttpResponseRedirect(f'{FRONTEND_URL}/payment?status=failed')
     return HttpResponseRedirect(f'http://localhost:3000/payment?status=failed')
 
 
@@ -200,10 +199,10 @@ def Cancle_or_Fail(request, order_id):
     
     if order_qs:
         order_qs.delete()
-        # return HttpResponseRedirect(f'{FRONTEND_URL}?payment_status=failed')
+        # return HttpResponseRedirect(f'{FRONTEND_URL}/payment?status=failed')
         return HttpResponseRedirect(f'http://localhost:3000/payment?status=failed')
 
-    # return HttpResponseRedirect(f'{FRONTEND_URL}?payment_status=failed')
+    # return HttpResponseRedirect(f'{FRONTEND_URL}/payment?status=failed')
     return HttpResponseRedirect(f'http://localhost:3000/payment?status=failed')
 
 
