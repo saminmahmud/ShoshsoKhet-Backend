@@ -49,6 +49,7 @@ class OrderDetailView(generics.RetrieveAPIView):
 
         return Order.objects.filter(buyer=user.buyer_profile)
     
+    
 class OrderStatusUpdateView(generics.UpdateAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderStatusSerializer

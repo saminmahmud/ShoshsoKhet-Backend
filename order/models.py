@@ -119,8 +119,6 @@ class SellerWallet(models.Model):
         return False
 
 
-
-
 class Order(models.Model):
     STATUS_CHOICES = (
         ('pending', 'Pending'),
@@ -146,7 +144,7 @@ class Order(models.Model):
     email = models.EmailField()
     phone = models.CharField(max_length=20, null=True, blank=True)
     address = models.TextField()
-    postal_code = models.CharField(max_length=20)
+    postal_code = models.CharField(max_length=20, null=True, blank=True)
     city = models.CharField(max_length=100)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     note = models.TextField(null=True, blank=True)
