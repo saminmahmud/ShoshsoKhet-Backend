@@ -51,12 +51,7 @@ class OrderAdmin(admin.ModelAdmin):
         }),
         ('Customer Details', {
             'fields': (
-                'first_name',
-                'last_name',
-                'email',
-                'phone',
                 'address',
-                'postal_code',
                 'city'
             )
         }),
