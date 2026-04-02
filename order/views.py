@@ -171,7 +171,7 @@ def Purchase(request, order_id, tran_id):
         order_qs.status = 'confirmed'
         order_qs.save()
         # return HttpResponseRedirect(f'{FRONTEND_URL}?payment_status=success')
-        return HttpResponseRedirect(f'http://localhost:3000/payment?status=success')
+        return HttpResponseRedirect(f'http://localhost:3000/payment?status=success&order_id={order_id}')
 
     # return HttpResponseRedirect(f'{FRONTEND_URL}?payment_status=failed')
     return HttpResponseRedirect(f'http://localhost:3000/payment?status=failed')
