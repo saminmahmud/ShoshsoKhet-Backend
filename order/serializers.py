@@ -43,7 +43,6 @@ class OrderSerializer(serializers.ModelSerializer):
             'id',
             'order_id',
             'transaction_id',
-            'buyer',
             'buyer_fullname',
             'address',
             'city',
