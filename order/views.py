@@ -49,7 +49,7 @@ class OrderDetailView(generics.RetrieveAPIView):
 
         return Order.objects.filter(buyer=user.buyer_profile)
     
-    
+
 class OrderStatusUpdateView(generics.UpdateAPIView):
     queryset = Order.objects.all()
     serializer_class = OrderStatusSerializer
@@ -162,9 +162,11 @@ def Purchase(request, order_id, tran_id):
         order_qs.tran_id = tran_id
         order_qs.status = 'confirmed'
         order_qs.save()
-        return HttpResponseRedirect(f'{FRONTEND_URL}/my-orders?payment_status=success')
+        # return HttpResponseRedirect(f'{FRONTEND_URL}?payment_status=success')
+        return HttpResponseRedirect(f'http://localhost:3000?payment_status=success')
 
-    return HttpResponseRedirect(f'{FRONTEND_URL}/cart?payment_status=failed')
+    # return HttpResponseRedirect(f'{FRONTEND_URL}?payment_status=failed')
+    return HttpResponseRedirect(f'http://localhost:3000?payment_status=failed')
 
 
 # View to handle the failure or cancellation of the payment
@@ -176,9 +178,11 @@ def Cancle_or_Fail(request, order_id):
     
     if order_qs:
         order_qs.delete()
-        return HttpResponseRedirect(f'{FRONTEND_URL}/cart?payment_status=failed')
+        # return HttpResponseRedirect(f'{FRONTEND_URL}?payment_status=failed')
+        return HttpResponseRedirect(f'http://localhost:3000?payment_status=failed')
 
-    return HttpResponseRedirect(f'{FRONTEND_URL}/cart?payment_status=failed')
+    # return HttpResponseRedirect(f'{FRONTEND_URL}?payment_status=failed')
+    return HttpResponseRedirect(f'http://localhost:3000?payment_status=failed')
 
 
 

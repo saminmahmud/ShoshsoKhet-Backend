@@ -77,7 +77,7 @@ class OrderSerializer(serializers.ModelSerializer):
                 order=order,
                 product=product,
                 quantity=item_data['quantity'],
-                price_per_unit=product.price_per_unit
+                price_per_unit=item_data['price_per_unit']
             )
 
         order.calculate_total()
