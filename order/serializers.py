@@ -10,7 +10,8 @@ User = get_user_model()
 class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.ReadOnlyField(source='product.name')
     seller_fullname = serializers.SerializerMethodField(read_only=True)
-
+    product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all()) 
+    
     class Meta:
         model = OrderItem
         fields = [
