@@ -101,16 +101,13 @@ class OrderDeleteView(generics.DestroyAPIView):
 
 
 class SellerOrderItemListView(generics.ListAPIView):
-    serializer_class = OrderItemSerializer
+    serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated, IsSeller]
 
     def get_queryset(self):
-        return OrderItem.objects.filter(
-            product__seller__user=self.request.user
-        ).select_related(
-            'product',
-            'order'
-        ).order_by('-order__created_at')
+        return Order.objects.filter(
+            items__product__seller__user=self.request.user
+        ).distinct().order_by('-created_at')
 
 
 class AdminOrderListView(generics.ListAPIView):
