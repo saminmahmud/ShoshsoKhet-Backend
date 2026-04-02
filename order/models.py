@@ -139,8 +139,8 @@ class Order(models.Model):
     transaction_id = models.CharField(max_length=100, null=True, blank=True)
     buyer = models.ForeignKey(BuyerProfile, on_delete=models.CASCADE, related_name='orders')
     
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
+    first_name = models.CharField(max_length=100, null=True, blank=True)
+    last_name = models.CharField(max_length=100, null=True, blank=True)
     email = models.EmailField()
     phone = models.CharField(max_length=20, null=True, blank=True)
     address = models.TextField()
