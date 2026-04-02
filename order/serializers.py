@@ -64,9 +64,10 @@ class OrderSerializer(serializers.ModelSerializer):
             'is_paid',
             'created_at',
             'updated_at',
-            'items'
+            'items',
+            'is_deleted'
         ]
-        read_only_fields = ['order_id','subtotal', 'total_amount', 'platform_commission', 'created_at', 'updated_at', 'status', 'transaction_id', 'is_paid', 'escrow_status', 'escrow_held_at', 'escrow_released_at']
+        read_only_fields = ['order_id','subtotal', 'total_amount', 'platform_commission', 'created_at', 'updated_at', 'status', 'transaction_id', 'is_paid', 'escrow_status', 'escrow_held_at', 'escrow_released_at', 'is_deleted']
 
 
     def create(self, validated_data):

@@ -99,8 +99,8 @@ class SetPasswordSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'user_type', 'is_verified']
-        read_only_fields = ['id', 'is_verified']
+        fields = ['id', 'first_name', 'last_name', 'email', 'phone', 'user_type', 'profile_image', 'is_verified', 'created_at', 'updated_at', 'is_deleted']
+        read_only_fields = ['id', 'is_verified', 'created_at', 'updated_at', 'is_deleted']
 
 
 class SellerProfileSerializer(serializers.ModelSerializer):

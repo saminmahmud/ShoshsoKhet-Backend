@@ -166,7 +166,7 @@ class Order(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+    is_deleted = models.BooleanField(default=False)
     
     def __str__(self):
         return f"{self.order_id} - {self.buyer.user.username}"
