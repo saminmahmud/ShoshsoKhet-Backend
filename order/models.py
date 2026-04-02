@@ -358,9 +358,9 @@ class OrderItem(models.Model):
     seller_payout = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
     def save(self, *args, **kwargs):
-        self.total_price = Decimal(str(self.quantity)) * Decimal(str(self.price_per_unit))
+        self.total_price = Decimal(self.quantity) * Decimal(self.price_per_unit)
         rate = PlatformCommission.get_platform_commission()
-        self.commission_rate = Decimal(str(rate))
+        self.commission_rate = Decimal(rate)
         self.commission_amount = self.calculate_commission()
         self.seller_payout = self.total_price - self.commission_amount
         super().save(*args, **kwargs)

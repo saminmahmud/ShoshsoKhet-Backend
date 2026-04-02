@@ -28,6 +28,14 @@ class OrderCreateView(generics.CreateAPIView):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated, IsBuyer]
 
+    def create(self, request, *args, **kwargs):
+        try:
+            return super().create(request, *args, **kwargs)
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return Response({'error': str(e)}, status=500)
+
 
 class BuyerOrderListView(generics.ListAPIView):
     serializer_class = OrderSerializer
@@ -104,8 +112,8 @@ class SellerOrderItemListView(generics.ListAPIView):
 def Paymentview(request, order_id):
     if request.method == 'POST':
         try:
-            order_qs = Order.objects.get(id=order_id, is_paid=False)
-            order_total = order_qs.total_price
+            order_qs = Order.objects.get(order_id=order_id, is_paid=False)
+            order_total = order_qs.total_amount
             
             tran_id = generate_transaction_id()
 
@@ -120,13 +128,13 @@ def Paymentview(request, order_id):
                 'total_amount': order_total,
                 'currency': "BDT",
                 'tran_id': tran_id,
-                'success_url': f"{BACKEND_URL}/order/payment/purchase/{order_id}/{tran_id}/",
-                'fail_url': f"{BACKEND_URL}/order/payment/cancle-or-fail/{order_id}/",
-                'cancel_url': f"{BACKEND_URL}/order/payment/cancle-or-fail/{order_id}/",
+                'success_url': f"{BACKEND_URL}/orders/payment/purchase/{order_id}/{tran_id}/",
+                'fail_url': f"{BACKEND_URL}/orders/payment/cancle-or-fail/{order_id}/",
+                'cancel_url': f"{BACKEND_URL}/orders/payment/cancle-or-fail/{order_id}/",
                 'emi_option': 0,
-                'cus_name': f'{order_qs.first_name} {order_qs.last_name}',
-                'cus_email': order_qs.email,
-                'cus_phone': order_qs.phone,
+                'cus_name': f'{order_qs.buyer.user.first_name} {order_qs.buyer.user.last_name}',
+                'cus_email': order_qs.buyer.user.email,
+                'cus_phone': order_qs.buyer.user.phone,
                 'cus_add1': order_qs.address,
                 'cus_city': order_qs.city,
                 'cus_country': "Bangladesh",
@@ -155,7 +163,7 @@ def Paymentview(request, order_id):
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 def Purchase(request, order_id, tran_id):
-    order_qs = Order.objects.get(id=order_id, is_paid=False)
+    order_qs = Order.objects.get(order_id=order_id, is_paid=False)
     
     if order_qs:
         order_qs.is_paid = True
@@ -174,7 +182,7 @@ def Purchase(request, order_id, tran_id):
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 def Cancle_or_Fail(request, order_id):
-    order_qs = Order.objects.get(id=order_id, is_paid=False)
+    order_qs = Order.objects.get(order_id=order_id, is_paid=False)
     
     if order_qs:
         order_qs.delete()

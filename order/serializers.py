@@ -11,7 +11,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.ReadOnlyField(source='product.name')
     seller_fullname = serializers.SerializerMethodField(read_only=True)
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all()) 
-    
+
     class Meta:
         model = OrderItem
         fields = [
@@ -72,10 +72,9 @@ class OrderSerializer(serializers.ModelSerializer):
         order = Order.objects.create(buyer=buyer, **validated_data)
 
         for item_data in items_data:
-            product = item_data['product']
             OrderItem.objects.create(
                 order=order,
-                product=product,
+                product=item_data['product'],
                 quantity=item_data['quantity'],
                 price_per_unit=item_data['price_per_unit']
             )
