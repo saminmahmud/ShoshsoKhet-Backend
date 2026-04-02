@@ -47,15 +47,25 @@ class BuyerOrderListView(generics.ListAPIView):
 
 class OrderDetailView(generics.RetrieveAPIView):
     serializer_class = OrderSerializer
-    permission_classes = [IsAuthenticated, IsBuyerOrAdmin]
+    permission_classes = [IsAuthenticated]
     lookup_field = 'order_id'
 
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     if user.user_type == 'admin':
+    #         return Order.objects.all()
+
+    #     return Order.objects.filter(buyer=user.buyer_profile)
     def get_queryset(self):
         user = self.request.user
         if user.user_type == 'admin':
             return Order.objects.all()
-
-        return Order.objects.filter(buyer=user.buyer_profile)
+        elif user.user_type == 'seller':
+            return Order.objects.filter(items__product__seller__user=user).distinct()
+        elif user.user_type == 'buyer':
+            return Order.objects.filter(buyer=user.buyer_profile)
+        else:
+            return Order.objects.none()
     
 
 class OrderStatusUpdateView(generics.UpdateAPIView):
@@ -102,6 +112,13 @@ class SellerOrderItemListView(generics.ListAPIView):
             'order'
         ).order_by('-order__created_at')
 
+
+class AdminOrderListView(generics.ListAPIView):
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get_queryset(self):
+        return Order.objects.all().order_by('-created_at')
 
 # Payment Gateway Integration
 

@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import (
+    AdminOrderListView,
     ManualRefund,
     ManualReleasePayment,
     OrderCreateView,
@@ -27,6 +28,8 @@ urlpatterns = [
     # Admin
     path('<uuid:order_id>/status/', OrderStatusUpdateView.as_view(), name='order-status-update'),
     path('<uuid:order_id>/delete/', OrderDeleteView.as_view(), name='order-delete'),
+
+    path('admin/', AdminOrderListView.as_view(), name='admin-order-list'),
 
     # Payment callbacks
     path('payment/<uuid:order_id>/', Paymentview, name='payment-create'),
