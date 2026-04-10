@@ -216,4 +216,5 @@ STORE_ID=env("STORE_ID")
 STORE_PASSWORD=env("STORE_PASSWORD")
 
 BACKEND_URL = env("BACKEND_URL", default="http://127.0.0.1:8000")
-FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
+# FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
+FRONTEND_URL = "http://localhost:3000"

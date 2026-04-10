@@ -186,11 +186,9 @@ def Purchase(request, order_id, tran_id):
         order_qs.transaction_id = tran_id
         order_qs.status = 'confirmed'
         order_qs.save()
-        # return HttpResponseRedirect(f'{FRONTEND_URL}/payment?status=success&order_id={order_id}')
-        return HttpResponseRedirect(f'http://localhost:3000/payment?status=success&order_id={order_id}')
+        return HttpResponseRedirect(f'{FRONTEND_URL}/payment?status=success&order_id={order_id}')
 
-    # return HttpResponseRedirect(f'{FRONTEND_URL}/payment?status=failed')
-    return HttpResponseRedirect(f'http://localhost:3000/payment?status=failed')
+    return HttpResponseRedirect(f'{FRONTEND_URL}/payment?status=failed')
 
 
 # View to handle the failure or cancellation of the payment
@@ -204,11 +202,9 @@ def Cancle_or_Fail(request, order_id):
         # order_qs.delete() # Don't delete the order, just mark it as cancelled
         order_qs.status = 'payment_failed'
         order_qs.save()
-        # return HttpResponseRedirect(f'{FRONTEND_URL}/payment?status=failed')
-        return HttpResponseRedirect(f'http://localhost:3000/payment?status=failed')
+        return HttpResponseRedirect(f'{FRONTEND_URL}/payment?status=failed')
 
-    # return HttpResponseRedirect(f'{FRONTEND_URL}/payment?status=failed')
-    return HttpResponseRedirect(f'http://localhost:3000/payment?status=failed')
+    return HttpResponseRedirect(f'{FRONTEND_URL}/payment?status=failed')
 
 
 
