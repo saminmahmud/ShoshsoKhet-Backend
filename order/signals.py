@@ -80,21 +80,19 @@ def handle_payment_release_on_delivery(sender, instance, created, **kwargs):
 
     # Order just delivered → Release payment
     if previous != 'delivered' and current == 'delivered':
-        with transaction.atomic():
-            if not instance.delivered_at:
-                from django.utils import timezone
-                instance.delivered_at = timezone.now()
-                Order.objects.filter(pk=instance.pk).update(delivered_at=instance.delivered_at)
-            
-            # Release payment to sellers
-            success = instance.release_payment_to_sellers()
-            
-            if success:
-                # Create platform revenue record
-                instance.create_platform_revenue()
-                # print(f"Payment released to sellers for order {instance.order_id}")
-            # else:
-                # print(f"Failed to release payment for order {instance.order_id}")
+        if not instance.delivered_at:
+            from django.utils import timezone
+            Order.objects.filter(pk=instance.pk).update(delivered_at=timezone.now())
+        
+        # Release payment to sellers
+        success = instance.release_payment_to_sellers()
+        
+        if success:
+            # Create platform revenue record
+            instance.create_platform_revenue()
+            # print(f"Payment released to sellers for order {instance.order_id}")
+        # else:
+            # print(f"Failed to release payment for order {instance.order_id}")
 
 
 @receiver(post_save, sender=Order)

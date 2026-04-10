@@ -39,6 +39,7 @@ class EscrowTransaction(models.Model):
         ('hold', 'Hold Payment'),
         ('release', 'Release to Seller'),
         ('refund', 'Refund to Buyer'),
+        ('platform_commission', 'Platform Commission'), 
     )
     
     STATUS_CHOICES = (
@@ -236,92 +237,95 @@ class Order(models.Model):
         Holds payment in escrow account
         """
         if self.is_paid and self.escrow_status == 'pending':
-            order = Order.objects.select_for_update().get(pk=self.pk)
-            
-            if order.escrow_status != 'pending':
-                return False
-            
-            # Get escrow account
-            escrow = EscrowAccount.get_main_account()
-            
-            # Hold payment
-            escrow.total_held += self.total_amount
-            escrow.total_balance += self.total_amount
-            escrow.save()
-            
-            # Create escrow transaction
-            EscrowTransaction.objects.create(
-                order=self,
-                transaction_type='hold',
-                amount=self.total_amount,
-                status='completed',
-                gateway_transaction_id=self.transaction_id,
-                notes=f"Payment held for order {self.order_id}",
-                completed_at=timezone.now()
-            )
-            
-            # Update order escrow status
-            Order.objects.filter(pk=self.pk).update(
-                escrow_status='held',
-                escrow_held_at=timezone.now()
-            )
-            
-            # Add to seller pending balance
-            for item in self.items.all():
-                wallet, created = SellerWallet.objects.get_or_create(
-                    seller=item.product.seller
+            from django.db import transaction as db_transaction
+
+            with db_transaction.atomic():
+                order = Order.objects.select_for_update().get(pk=self.pk)
+
+                if order.escrow_status != 'pending':
+                    return False
+
+                escrow = EscrowAccount.get_main_account()
+                escrow.total_held += self.total_amount
+                escrow.total_balance += self.total_amount
+                escrow.save()
+
+                EscrowTransaction.objects.create(
+                    order=self,
+                    transaction_type='hold',
+                    amount=self.total_amount,
+                    status='completed',
+                    gateway_transaction_id=self.transaction_id,
+                    notes=f"Payment held for order {self.order_id}",
+                    completed_at=timezone.now()
                 )
-                wallet.add_pending(item.seller_payout)
-            
-            return True
+
+                Order.objects.filter(pk=self.pk).update(
+                    escrow_status='held',
+                    escrow_held_at=timezone.now()
+                )
+
+                for item in self.items.all():
+                    wallet, _ = SellerWallet.objects.get_or_create(
+                        seller=item.product.seller
+                    )
+                    wallet.add_pending(item.seller_payout)
+
+                return True
         return False
     
     def release_payment_to_sellers(self):
-        """
-        Called after delivery confirmation
-        Releases payment from escrow to seller wallets
-        """
         if self.escrow_status == 'held' and self.status == 'delivered':
-            # Get escrow account
-            escrow = EscrowAccount.get_main_account()
-            
-            for item in self.items.all():
-                # Get seller wallet
-                wallet, created = SellerWallet.objects.get_or_create(
-                    seller=item.product.seller
-                )
-                
-                # Release from pending to available
-                wallet.release_to_available(item.seller_payout)
-                
-                # Create escrow transaction
+            from django.db import transaction as db_transaction
+
+            with db_transaction.atomic():
+                order = Order.objects.select_for_update().get(pk=self.pk)
+
+                if order.escrow_status != 'held':
+                    return False
+
+                escrow = EscrowAccount.get_main_account()
+                total_seller_payout = Decimal('0')
+
+                for item in order.items.select_related('product__seller'):
+                    wallet, _ = SellerWallet.objects.get_or_create(
+                        seller=item.product.seller
+                    )
+                    wallet.release_to_available(item.seller_payout)
+                    total_seller_payout += item.seller_payout
+
+                    EscrowTransaction.objects.create(
+                        order=order,
+                        transaction_type='release',
+                        amount=item.seller_payout,
+                        status='completed',
+                        notes=f"Payment released to {item.product.seller.user.username} for order {order.order_id}",
+                        completed_at=timezone.now()
+                    )
+
                 EscrowTransaction.objects.create(
-                    order=self,
-                    transaction_type='release',
-                    amount=item.seller_payout,
+                    order=order,
+                    transaction_type='platform_commission',
+                    amount=order.platform_commission,
                     status='completed',
-                    notes=f"Payment released to {item.product.seller.user.username} for order {self.order_id}",
+                    notes=f"Platform commission collected for order {order.order_id}",
                     completed_at=timezone.now()
                 )
-                
-                escrow.total_held -= item.seller_payout
-                escrow.total_released += item.seller_payout
-            
-            # Platform commission stays with platform
-            escrow.total_balance -= self.platform_commission
-            escrow.save()
-            
-            # Update order escrow status
-            self.escrow_status = 'released'
-            self.escrow_released_at = timezone.now()
-            Order.objects.filter(pk=self.pk).update(
-                escrow_status='released',
-                escrow_released_at=timezone.now()
-            )
-            
-            return True
+
+                escrow.total_held -= order.total_amount
+                escrow.total_released += total_seller_payout
+                escrow.total_balance -= order.total_amount
+                escrow.save()
+
+                Order.objects.filter(pk=self.pk).update(
+                    escrow_status='released',
+                    escrow_released_at=timezone.now()
+                )
+
+                return True
+
         return False
-    
+
     def refund_to_buyer(self, reason=None):
         """
         Called when order is cancelled
