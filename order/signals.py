@@ -110,7 +110,7 @@ def handle_refund_on_cancellation(sender, instance, created, **kwargs):
     current = instance.status
 
     # Order cancelled (but NOT from delivered state)
-    if current == 'cancelled' and previous != 'delivered':
+    if current == 'cancelled' and previous in ['confirmed', 'out_for_delivery']:
         with transaction.atomic():
             if instance.escrow_status == 'held':
                 success = instance.refund_to_buyer(

@@ -126,6 +126,7 @@ class Order(models.Model):
         ('out_for_delivery', 'Out for Delivery'),
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
+        ('payment_failed', 'Payment Failed'), 
     )
 
     ESCROW_STATUS_CHOICES = (
@@ -184,10 +185,9 @@ class Order(models.Model):
         if self.pk:
             items = self.items.all()
 
-            subtotal = sum(item.total_price for item in items)
-
-            seller_commission = sum(item.commission_amount for item in items)
-            buyer_commission = sum(item.buyer_commission for item in items)
+            subtotal = sum((item.total_price for item in items), Decimal('0'))
+            seller_commission = sum((item.commission_amount for item in items), Decimal('0'))
+            buyer_commission = sum((item.buyer_commission for item in items), Decimal('0'))
 
             # buyer pays 
             total_amount = subtotal + buyer_commission
@@ -236,6 +236,11 @@ class Order(models.Model):
         Holds payment in escrow account
         """
         if self.is_paid and self.escrow_status == 'pending':
+            order = Order.objects.select_for_update().get(pk=self.pk)
+            
+            if order.escrow_status != 'pending':
+                return False
+            
             # Get escrow account
             escrow = EscrowAccount.get_main_account()
             
@@ -256,8 +261,6 @@ class Order(models.Model):
             )
             
             # Update order escrow status
-            self.escrow_status = 'held'
-            self.escrow_held_at = timezone.now()
             Order.objects.filter(pk=self.pk).update(
                 escrow_status='held',
                 escrow_held_at=timezone.now()
@@ -347,8 +350,9 @@ class Order(models.Model):
             for item in self.items.all():
                 try:
                     wallet = SellerWallet.objects.get(seller=item.product.seller)
-                    wallet.pending_balance -= item.seller_payout
-                    wallet.save()
+                    if wallet.pending_balance >= item.seller_payout:
+                        wallet.pending_balance -= item.seller_payout
+                        wallet.save()
                 except SellerWallet.DoesNotExist:
                     pass
             

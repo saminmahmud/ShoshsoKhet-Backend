@@ -3,7 +3,7 @@ from django.http import JsonResponse, HttpResponseRedirect
 from rest_framework.permissions import IsAuthenticated
 from sslcommerz_lib import SSLCOMMERZ
 from order.utils import generate_transaction_id
-from .models import Order, OrderItem
+from .models import Order, OrderItem, EscrowTransaction
 from .serializers import OrderItemSerializer, OrderSerializer, OrderStatusSerializer, OrderStatusSerializer, EscrowTransactionSerializer, SellerWalletSerializer
 from product.permissions import IsSellerOrAdmin, IsBuyerOrAdmin, IsAdmin, IsSeller, IsBuyer
 from rest_framework import generics, viewsets, status
@@ -82,6 +82,9 @@ class OrderStatusUpdateView(generics.UpdateAPIView):
         
         if order.status == 'delivered':
             raise ValidationError("Delivered order cannot be changed")
+        
+        if order.status == 'payment_failed':
+            raise ValidationError("Payment failed order cannot be changed")
    
         serializer.save()
 
@@ -176,7 +179,7 @@ def Paymentview(request, order_id):
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 def Purchase(request, order_id, tran_id):
-    order_qs = Order.objects.get(order_id=order_id, is_paid=False)
+    order_qs = Order.objects.filter(order_id=order_id, is_paid=False).first()
     
     if order_qs:
         order_qs.is_paid = True
@@ -195,10 +198,12 @@ def Purchase(request, order_id, tran_id):
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 def Cancle_or_Fail(request, order_id):
-    order_qs = Order.objects.get(order_id=order_id, is_paid=False)
+    order_qs = Order.objects.filter(order_id=order_id, is_paid=False).first()
     
     if order_qs:
-        order_qs.delete()
+        # order_qs.delete() # Don't delete the order, just mark it as cancelled
+        order_qs.status = 'payment_failed'
+        order_qs.save()
         # return HttpResponseRedirect(f'{FRONTEND_URL}/payment?status=failed')
         return HttpResponseRedirect(f'http://localhost:3000/payment?status=failed')
 
@@ -280,7 +285,7 @@ class EscrowTransactionListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def get_queryset(self):
-        return Order.objects.filter(escrow_status='held').order_by('-escrow_held_at')
+        return EscrowTransaction.objects.select_related('order').all().order_by('-created_at')
     
     
 class SellerWalletView(generics.RetrieveAPIView):
