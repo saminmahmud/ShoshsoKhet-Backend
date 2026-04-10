@@ -160,7 +160,3 @@ class BuyerDashboardSerializer(serializers.ModelSerializer):
             'village',
             'address_details',
         ]
-
-    def get_orders(self, obj):
-        orders = obj.orders.all()
-        return OrderSerializer(orders, many=True).data
