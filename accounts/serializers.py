@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from order.models import Order
+from order.serializers import OrderItemSerializer, OrderSerializer
+from product.models import Product
 from .models import User, SellerProfile, BuyerProfile
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -120,7 +122,6 @@ class BuyerProfileSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'nid_number', 'division', 'district', 'upazila', 'village', 'address_details']
 
 
-
 class SellerDashboardSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     products = products = serializers.SerializerMethodField()
@@ -143,17 +144,9 @@ class SellerDashboardSerializer(serializers.ModelSerializer):
         return ProductSerializer(products, many=True).data
 
 
-class OrderSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Order
-        fields = '__all__'
-
-
-
 class BuyerDashboardSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
-    orders = serializers.SerializerMethodField()
+    orders = OrderSerializer(many=True, read_only=True)
 
     class Meta:
         model = BuyerProfile
