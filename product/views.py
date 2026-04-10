@@ -86,3 +86,4 @@ class ProductViewSet(viewsets.ModelViewSet):
                 raise PermissionDenied("Product is inactive.")
 
         return obj
+
