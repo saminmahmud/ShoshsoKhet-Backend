@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from order.models import Order
 from .models import User, SellerProfile, BuyerProfile
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -108,7 +109,7 @@ class SellerProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SellerProfile
-        fields = ['user', 'nid_number', 'division', 'district', 'upazila', 'village', 'address_details']
+        fields = ['id', 'user', 'nid_number', 'division', 'district', 'upazila', 'village', 'address_details']
 
 
 class BuyerProfileSerializer(serializers.ModelSerializer):
@@ -116,4 +117,57 @@ class BuyerProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BuyerProfile
-        fields = ['user', 'nid_number', 'division', 'district', 'upazila', 'village', 'address_details']
+        fields = ['id', 'user', 'nid_number', 'division', 'district', 'upazila', 'village', 'address_details']
+
+
+
+class SellerDashboardSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    products = products = serializers.SerializerMethodField()
+    class Meta:
+        model = SellerProfile
+        fields = [
+            'user',
+            'products',
+            'nid_number',
+            'division',
+            'district',
+            'upazila',
+            'village',
+            'address_details',
+        ]
+
+    def get_products(self, obj):
+        from product.serializers import ProductSerializer 
+        products = obj.products.all()
+        return ProductSerializer(products, many=True).data
+
+
+class OrderSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Order
+        fields = '__all__'
+
+
+
+class BuyerDashboardSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    orders = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BuyerProfile
+        fields = [
+            'user',
+            'orders',
+            'nid_number',
+            'division',
+            'district',
+            'upazila',
+            'village',
+            'address_details',
+        ]
+
+    def get_orders(self, obj):
+        orders = obj.orders.all()
+        return OrderSerializer(orders, many=True).data

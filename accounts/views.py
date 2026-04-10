@@ -3,7 +3,7 @@ import threading
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 from rest_framework import generics
 from rest_framework.response import Response
@@ -12,7 +12,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from accounts.models import BuyerProfile, SellerProfile
-from accounts.serializers import RegisterSerializer, ForgetOrChangePasswordSerializer, SetPasswordSerializer, UserSerializer, SellerProfileSerializer, BuyerProfileSerializer, CustomTokenObtainPairSerializer
+from accounts.serializers import BuyerDashboardSerializer, RegisterSerializer, ForgetOrChangePasswordSerializer, SellerDashboardSerializer, SetPasswordSerializer, UserSerializer, SellerProfileSerializer, BuyerProfileSerializer, CustomTokenObtainPairSerializer
 from accounts.tasks import send_email
 from accounts.utils import generate_email_token, verify_email_token, cleanup_expired_tokens
 from django.contrib.auth import get_user_model
@@ -258,3 +258,22 @@ class BuyerProfileView(ModelViewSet):
 
     def perform_update(self, serializer):
         serializer.save(user=self.request.user)
+
+
+
+class SellerDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, seller_id):
+        seller = get_object_or_404(SellerProfile, id=seller_id)
+        serializer = SellerDashboardSerializer(seller)
+        return Response(serializer.data)
+
+
+class BuyerDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, buyer_id):
+        buyer = get_object_or_404(BuyerProfile, id=buyer_id)
+        serializer = BuyerDashboardSerializer(buyer)
+        return Response(serializer.data)

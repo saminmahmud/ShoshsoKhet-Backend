@@ -2,7 +2,9 @@ from django.urls import path, include
 from . import views
 from rest_framework.routers import DefaultRouter
 from accounts.views import (
+    BuyerDashboardView,
     CustomTokenObtainPairView,
+    SellerDashboardView,
     UserDetailView,
     SellerProfileView,
     BuyerProfileView
@@ -26,4 +28,7 @@ urlpatterns = [
 
     path('password-reset/', views.PasswordForgetOrChangeRequest.as_view(), name='password_reset'),
     path('password-reset-confirm/', views.SetPasswordView.as_view(), name='password_reset_confirm'),
+
+    path('seller/dashboard/<int:seller_id>/', SellerDashboardView.as_view(), name='seller-dashboard'),
+    path('buyer/dashboard/<int:buyer_id>/', BuyerDashboardView.as_view(), name='buyer-dashboard'),
 ]
