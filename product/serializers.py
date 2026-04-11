@@ -8,6 +8,11 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = '__all__'
+        read_only_fields = ['is_active']
+
+    def create(self, validated_data):
+        validated_data.setdefault('is_active', True)
+        return super().create(validated_data)
 
 
 class CategoryReadSerializer(serializers.ModelSerializer):
