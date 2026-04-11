@@ -62,7 +62,7 @@ class VerifyEmailView(APIView):
             try:
                 user = User.objects.get(email=email)
                 user.is_verified = True
-                user.is_active = True 
+                # user.is_active = True 
                 user.save()
                 return HttpResponseRedirect(settings.FRONTEND_URL + "/login?status=success")
             except User.DoesNotExist:
