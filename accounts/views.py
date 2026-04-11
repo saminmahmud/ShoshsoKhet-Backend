@@ -36,12 +36,14 @@ class RegisterView(generics.CreateAPIView):
         # email sending
         token = generate_email_token(user)
         confirmation_link = f"{settings.BACKEND_URL}/accounts/verify-email/?token={token}"
-        subject = "Verify Your Email"
-        body = render_to_string("activation_email.html", {
-            "user": user,
-            "confirmation_link": confirmation_link,
-        })
-        threading.Thread(target=send_email, args=(subject, body, user.email)).start()
+
+        subject = "Verify Your Email" 
+        body = render_to_string("activation_email.html", { 
+            "user": user, 
+            "confirmation_link": confirmation_link, 
+            }) 
+        email_thread = threading.Thread(target=send_email, args=(subject, body, user.email)) 
+        email_thread.start()
 
         return Response(
             {"message": "Registration successful. Please check your email to verify your account."},
@@ -60,6 +62,7 @@ class VerifyEmailView(APIView):
             try:
                 user = User.objects.get(email=email)
                 user.is_verified = True
+                user.is_active = True 
                 user.save()
                 return HttpResponseRedirect(settings.FRONTEND_URL + "/login?status=success")
             except User.DoesNotExist:

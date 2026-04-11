@@ -55,6 +55,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         user = User.objects.create_user(**validated_data)
         user.is_verified = False
+        user.is_active = False
         user.save()
         if user.user_type == 'seller':
             SellerProfile.objects.create(
