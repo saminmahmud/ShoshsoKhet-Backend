@@ -155,7 +155,8 @@ class SellerDashboardSerializer(serializers.ModelSerializer):
 
 class BuyerDashboardSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
-    orders = OrderSerializer(many=True, read_only=True)
+    # orders = OrderSerializer(many=True, read_only=True)
+    orders = serializers.SerializerMethodField() 
 
     class Meta:
         model = BuyerProfile
@@ -169,3 +170,8 @@ class BuyerDashboardSerializer(serializers.ModelSerializer):
             'village',
             'address_details',
         ]
+
+    def get_orders(self, obj):
+        from order.serializers import OrderSerializer
+        paid_orders = obj.orders.filter(is_paid=True) 
+        return OrderSerializer(paid_orders, many=True).data

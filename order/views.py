@@ -199,9 +199,9 @@ def Cancle_or_Fail(request, order_id):
     order_qs = Order.objects.filter(order_id=order_id, is_paid=False).first()
     
     if order_qs:
-        # order_qs.delete() # Don't delete the order, just mark it as cancelled
-        order_qs.status = 'payment_failed'
-        order_qs.save()
+        order_qs.delete() # Don't delete the order, just mark it as cancelled
+        # order_qs.status = 'payment_failed'
+        # order_qs.save()
         return HttpResponseRedirect(f'{FRONTEND_URL}/payment?status=failed')
 
     return HttpResponseRedirect(f'{FRONTEND_URL}/payment?status=failed')
