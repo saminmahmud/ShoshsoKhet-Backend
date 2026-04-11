@@ -45,28 +45,36 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data.pop('confirm_password')
+
+        nid_number = validated_data.pop('nid_number')
+        division = validated_data.pop('division')
+        district = validated_data.pop('district')
+        upazila = validated_data.pop('upazila')
+        village = validated_data.pop('village')
+        address_details = validated_data.pop('address_details', '')
+
         user = User.objects.create_user(**validated_data)
         user.is_verified = False
         user.save()
         if user.user_type == 'seller':
             SellerProfile.objects.create(
                 user=user,
-                nid_number=validated_data['nid_number'],
-                division=validated_data['division'],
-                district=validated_data['district'],
-                upazila=validated_data['upazila'],
-                village=validated_data['village'],
-                address_details=validated_data.get('address_details', '')
+                nid_number=nid_number,
+                division=division,
+                district=district,
+                upazila=upazila,
+                village=village,
+                address_details=address_details
             )
         elif user.user_type == 'buyer':
             BuyerProfile.objects.create(
                 user=user,
-                nid_number=validated_data['nid_number'],
-                division=validated_data['division'],
-                district=validated_data['district'],
-                upazila=validated_data['upazila'],
-                village=validated_data['village'],
-                address_details=validated_data.get('address_details', '')
+                nid_number=nid_number,
+                division=division,
+                district=district,
+                upazila=upazila,
+                village=village,
+                address_details=address_details
             )
         return user
 

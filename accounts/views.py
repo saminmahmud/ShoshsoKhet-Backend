@@ -28,22 +28,25 @@ User = get_user_model()
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         user = serializer.save()
+
+        # email sending
         token = generate_email_token(user)
         confirmation_link = f"{settings.BACKEND_URL}/accounts/verify-email/?token={token}"
-
-        # send email by html file 
         subject = "Verify Your Email"
         body = render_to_string("activation_email.html", {
             "user": user,
             "confirmation_link": confirmation_link,
         })
+        threading.Thread(target=send_email, args=(subject, body, user.email)).start()
 
-        email_thread = threading.Thread(target=send_email, args=(subject, body, user.email))
-        email_thread.start()
-
-        return Response({"message": "Registration successful. Please check your email to verify your account."}, status=201)
+        return Response(
+            {"message": "Registration successful. Please check your email to verify your account."},
+            status=201
+        )
 
 
 class VerifyEmailView(APIView):

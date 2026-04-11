@@ -40,7 +40,7 @@ class SellerProfile(models.Model):
     district = models.CharField(max_length=50)
     upazila = models.CharField(max_length=50)
     village = models.CharField(max_length=100)
-    address_details = models.TextField()
+    address_details = models.TextField(blank=True, default='')
     
     def __str__(self):
         return f"{self.user.username} - {self.user.user_type}"
@@ -53,7 +53,7 @@ class BuyerProfile(models.Model):
     district = models.CharField(max_length=50)
     upazila = models.CharField(max_length=50)
     village = models.CharField(max_length=100)
-    address_details = models.TextField()
+    address_details = models.TextField(blank=True, default='')
 
     def __str__(self):
         return f"{self.user.username} - {self.user.user_type}"
