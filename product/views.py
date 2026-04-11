@@ -21,7 +21,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         # Anyone logged in can READ
         if self.action in ['list', 'retrieve']:
-            return [permissions.AllowAny()]
+            return Category.objects.filter(is_active=True)
         # Only admin can CREATE / UPDATE / DELETE
         return [permissions.IsAuthenticated(), IsAdmin()]
     
