@@ -25,6 +25,12 @@ class CategoryViewSet(viewsets.ModelViewSet):
         # Only admin can CREATE / UPDATE / DELETE
         return [permissions.IsAuthenticated(), IsAdmin()]
     
+    def get_queryset(self):
+        if self.action in ['list', 'retrieve']:
+            return Category.objects.filter(is_active=True)
+
+        return Category.objects.all()
+    
 
 class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
